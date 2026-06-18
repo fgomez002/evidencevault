@@ -85,7 +85,10 @@ Account creation, incidents, encrypted evidence upload, PDF export all work agai
 
 ## Ideas / next features (optional)
 
-- Add an annual product to the paywall.
+- Add an annual product to the paywall (paywall already renders any packages the
+  RevenueCat current offering exposes — this is store/dashboard config only).
 - Store-listing copy + subscription legal text for App Store / Google Play.
 - Twilio gateway for fully-automated background panic SMS (today opens the composer).
-- Background task to auto-flag missed check-ins and notify panic contacts.
+- ✅ Missed check-in detection + escalation (in-app, while the app is open) — done.
+  A server cron + push for missed check-ins while the app is *closed* is still open
+  (needs an Edge Function on a schedule + push tokens).
