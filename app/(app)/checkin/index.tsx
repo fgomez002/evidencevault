@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Screen, Text, Card, Button, Input } from '@/components/ui';
 import { useCheckIns, useCreateCheckIn, useUpdateCheckInStatus, useDeleteCheckIn, CheckIn } from '@/hooks/useCheckIns';
+import { useContacts } from '@/hooks/useContacts';
 import { scheduleCheckInReminder } from '@/lib/notifications';
+import { isOverdue, missedCheckInMessage } from '@/lib/checkin';
+import { triggerPanic } from '@/lib/panic';
 import { theme } from '@/theme';
 
 const QUICK = [
@@ -13,10 +16,46 @@ const QUICK = [
 
 export default function CheckIns() {
   const { data: checkIns = [] } = useCheckIns();
+  const { data: contacts = [] } = useContacts();
   const create = useCreateCheckIn();
   const updateStatus = useUpdateCheckInStatus();
   const del = useDeleteCheckIn();
   const [windowMin, setWindowMin] = useState('30');
+  const handledOverdue = useRef<Set<string>>(new Set());
+
+  // When a pending check-in passes its confirm window, flag it as missed and
+  // offer to alert the user's panic contacts. We only prompt once per check-in.
+  useEffect(() => {
+    const overdue = checkIns.filter((c) => isOverdue(c) && !handledOverdue.current.has(c.id));
+    if (overdue.length === 0) return;
+
+    for (const c of overdue) {
+      handledOverdue.current.add(c.id);
+      updateStatus.mutate({ id: c.id, status: 'missed' });
+    }
+
+    const latest = overdue.sort(
+      (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
+    )[0];
+    const recipients = contacts.filter((p) => p.is_panic_recipient && p.phone);
+
+    Alert.alert(
+      '⚠️ Missed check-in',
+      recipients.length > 0
+        ? `You didn't confirm a check-in scheduled for ${new Date(latest.scheduled_at).toLocaleString()}. Alert your ${recipients.length} panic contact${recipients.length > 1 ? 's' : ''}?`
+        : `You didn't confirm a check-in scheduled for ${new Date(latest.scheduled_at).toLocaleString()}. Add a panic contact to enable automatic alerts.`,
+      recipients.length > 0
+        ? [
+            { text: 'Not now', style: 'cancel' },
+            {
+              text: 'Alert contacts',
+              style: 'destructive',
+              onPress: () => triggerPanic(contacts, missedCheckInMessage(latest.scheduled_at)),
+            },
+          ]
+        : [{ text: 'OK' }],
+    );
+  }, [checkIns, contacts, updateStatus]);
 
   async function schedule(mins: number) {
     const at = new Date();

@@ -3,14 +3,19 @@ import { useRouter } from 'expo-router';
 import { Screen, Text, Card, PressableCard, Button } from '@/components/ui';
 import { useIncidents } from '@/hooks/useIncidents';
 import { useEvidenceList } from '@/hooks/useEvidence';
+import { useCheckIns } from '@/hooks/useCheckIns';
 import { useAuth } from '@/providers/AuthProvider';
+import { isOverdue } from '@/lib/checkin';
 import { theme } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
   const { data: incidents = [] } = useIncidents();
   const { data: evidence = [] } = useEvidenceList();
+  const { data: checkIns = [] } = useCheckIns();
   const { configured } = useAuth();
+
+  const overdueCount = checkIns.filter((c) => isOverdue(c)).length;
 
   const last7 = incidents.filter(
     (i) => Date.now() - new Date(i.occurred_at).getTime() < 7 * 86400_000,
@@ -44,6 +49,20 @@ export default function Home() {
             Connect a Supabase project to enable accounts, cloud backup, and encrypted sync.
           </Text>
         </Card>
+      )}
+
+      {overdueCount > 0 && (
+        <PressableCard style={styles.overdue} onPress={() => router.push('/(app)/checkin')}>
+          <Text style={styles.overdueIcon}>⏰</Text>
+          <View style={{ flex: 1 }}>
+            <Text weight="semibold" tone="danger">
+              {overdueCount} missed check-in{overdueCount > 1 ? 's' : ''}
+            </Text>
+            <Text tone="muted" variant="caption">
+              Tap to confirm you're safe or alert your contacts.
+            </Text>
+          </View>
+        </PressableCard>
       )}
 
       <View style={styles.statsRow}>
@@ -123,6 +142,15 @@ const styles = StyleSheet.create({
   panicText: { color: '#fff', fontSize: 13 },
   gear: { fontSize: 24 },
   demoNotice: { marginBottom: theme.spacing.lg, borderColor: theme.colors.indigo + '55' },
+  overdue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    borderColor: theme.colors.danger + '66',
+    backgroundColor: theme.colors.dangerDim + '33',
+  },
+  overdueIcon: { fontSize: 24 },
   statsRow: { flexDirection: 'row', gap: theme.spacing.md },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statIcon: { fontSize: 22, marginBottom: 2 },
