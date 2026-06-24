@@ -1,0 +1,98 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please provide as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clearly describe the bug. What did you expect to happen?
+      placeholder: I was trying to... but instead...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce the issue?
+      placeholder: |
+        1. Open the app
+        2. Navigate to...
+        3. Tap on...
+        4. See the error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+      placeholder: The incident should have been saved...
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error logs or console output
+      description: If applicable, paste any error messages
+      render: shell
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS (Expo Go)
+        - iOS (Dev Build)
+        - Android (Expo Go)
+        - Android (Dev Build)
+        - Web
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: What version are you using?
+      placeholder: "0.1.0"
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (app crashes)
+        - High (feature broken)
+        - Medium (workaround exists)
+        - Low (cosmetic)
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Additional context (device, OS version, etc.)
+      placeholder: |
+        - Device: iPhone 15 Pro
+        - OS: iOS 18.1
+        - Node: 20.11.0
+
+  - type: checkbox
+    id: privacy
+    attributes:
+      label: Privacy
+      description: ⚠️ Do not share incident data, photos, or personal information
+      options:
+        - label: I have not included any sensitive incident data
+      validations:
+        required: true

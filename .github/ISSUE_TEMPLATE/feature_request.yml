@@ -1,0 +1,68 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the suggestion! We'd love to hear your ideas.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve? Who needs it?
+      placeholder: Users currently have to manually... but it would be better if...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should this feature work?
+      placeholder: |
+        The app should allow users to...
+        Users would access this by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Are there other ways to solve this?
+      placeholder: We could also...
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Security
+        - Performance
+        - Usability
+        - Accessibility
+        - Integration
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other details?
+      placeholder: Similar apps do this by...
+
+  - type: checkbox
+    id: user-impact
+    attributes:
+      label: Impact
+      options:
+        - label: This would benefit core users (people documenting incidents)
+        - label: This would improve developer experience
+        - label: This would improve security/privacy

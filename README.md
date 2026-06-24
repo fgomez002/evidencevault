@@ -1,95 +1,112 @@
-# EvidenceVault
+﻿# EvidenceVault
 
-A secure, private incident-documentation app for personal-safety situations. Mobile-first
-(Expo / React Native + TypeScript) with Supabase for auth, cloud sync, and encrypted storage.
+**Secure incident documentation app** — a mobile-first platform for recording, organizing, and exporting incidents with cryptographic integrity verification. Built for personal safety, legal credibility, and chain-of-custody compliance.
 
-> EvidenceVault is a documentation tool — **not** legal advice or an emergency service.
-> In an emergency, contact your local emergency number.
+- 🔐 **Client-side encryption** of evidence files
+- ✅ **Cryptographic integrity** — SHA-256 hashing + tamper-proof timeline
+- 📱 **Native mobile** — Expo SDK 51 (iOS + Android)
+- 🔑 **Biometric app lock** — Face ID / fingerprint
+- 🤖 **AI-powered search** — incident summaries and pattern detection
+- 💳 **Subscriptions** — RevenueCat integration (in-app purchases)
+- 📊 **Court-ready reports** — case-file PDFs with chain-of-custody audit trail
 
-## Status
+---
 
-**All phases (0–7) complete.** See [PLAN.md](PLAN.md) for the full architecture.
+## Quick Start
 
-Implemented:
-- **Auth + biometric app lock** (Face ID / fingerprint, auto-relock on background)
-- **Incident Journal** — categories, notes, emotional impact, follow-up, GPS capture
-- **Evidence Vault** — photo / video / audio / document capture, client-side encryption,
-  SHA-256 chain-of-custody, search & filtering
-- **Timeline** — merged chronological view of incidents + evidence
-- **Witness Management** — statements + contact info, call/email actions
-- **Police Report Tracker** — report #, agency, officer, badge, status workflow
-- **Contact Directory** — grouped by relationship, call/text/email, panic-recipient flag
-- **Reports & export** — PDF case file, integrity report, timeline, evidence index,
-  witness list, police-report history (`expo-print`)
-- **Panic button** — hold-to-trigger, GPS + SMS to panic recipients
-- **Check-ins** — scheduled safety check-ins with local notification reminders
-- **AI assistant** — summaries, pattern detection, attorney-ready reports
-  (Supabase Edge Function → Claude API; premium-gated, consent-gated)
-- **Smart search** — one search across incidents, evidence, witnesses, reports
-- **Subscriptions** — Free vs Premium with feature gating + paywall
-- Dark-default design system, integrity logging, RLS-scoped data model
+### Prerequisites
+- Node.js 18+ and npm
+- Expo CLI (`npm install -g expo-cli`)
+- Supabase CLI (for Edge Functions and migrations)
 
-## Security model (Hybrid — see PLAN.md §4)
-
-- Evidence **files** are encrypted on-device (XSalsa20-Poly1305 / NaCl secretbox) before upload.
-  Supabase Storage only ever stores ciphertext.
-- The vault key lives in the device Keychain/Keystore via `expo-secure-store`.
-- Every file is SHA-256 hashed at capture; the hash is re-verified on open and recorded in an
-  append-only `integrity_log` (insert/select-only) for a verifiable chain of custody.
-- Incident **text** is stored in Postgres under Row Level Security to keep search and future
-  AI/reporting features fast.
-
-## Getting started
+### Install & Run
 
 ```bash
+git clone https://github.com/YOUR_ORG/evidencevault.git
+cd evidencevault
+
 npm install
 
-# Configure Supabase (see PLAN.md §9 — a project still needs to be provisioned)
+# Set up environment variables
 cp .env.example .env
-#   EXPO_PUBLIC_SUPABASE_URL=...
-#   EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+# Fill in EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
 
-npm start            # Expo dev server (scan QR with Expo Go / dev build)
-npm run typecheck    # tsc --noEmit
+# Start dev server (Expo Go)
+npm start
+
+# Open in Expo Go on your phone, or 'w' for web simulator
 ```
 
-Without Supabase configured, the app boots in **demo mode** so the UI can be reviewed; auth and
-cloud sync are disabled until a project is connected.
+**Note:** In-app purchases require a development build, not Expo Go. See [Building for Production](#building-for-production).
 
-## Database
+---
 
-SQL migrations live in `supabase/migrations/`:
-- `0001_init.sql` — schema, enums, triggers
-- `0002_rls.sql` — Row Level Security policies
-- `0003_storage.sql` — private `evidence` bucket + storage policies
-
-Apply them to a Supabase project (CLI `supabase db push`, the SQL editor, or the MCP tools).
-
-## Project structure
+## Project Structure
 
 ```
-app/                 Expo Router routes
-  (auth)/            sign in / sign up
-  (app)/(tabs)/      Home · Journal · Vault · Timeline
-  (app)/incident/    new · [id] · edit
-  (app)/evidence/    add · [id]
-  (app)/settings/
+app/                          # Expo Router (file-based routing)
+├── (auth)/                   # Sign-in, sign-up, biometric setup
+├── (app)/                    # Main tabbed interface
+│   ├── (tabs)/              # Home, Journal, Vault, Timeline, More
+│   ├── [id]/                # Detail views
+│   └── export/              # PDF generation
 src/
-  components/ui/     design system
-  hooks/             TanStack Query data hooks
-  lib/               supabase, crypto, hash, base64, location, integrity
-  providers/         Auth, Query
-  stores/            zustand (app lock)
-  theme/             tokens, categories
-supabase/migrations/
+├── lib/
+│   ├── crypto.ts            # XChaCha20-Poly1305 encryption
+│   ├── hash.ts              # SHA-256 hashing
+│   ├── integrity.ts         # Integrity log & verification
+│   ├── pdf.ts               # Report generation
+│   └── purchases.ts         # RevenueCat IAP wrapper
+├── hooks/
+│   ├── useIncidents.ts      # TanStack Query for incidents
+│   ├── useEvidence.ts       # Evidence + encryption
+│   ├── useAiAssistant.ts    # Claude API integration
+│   └── useSubscription.ts   # IAP & entitlements
+├── stores/
+│   ├── lockStore.ts         # App lock (biometric/PIN)
+│   └── subscriptionStore.ts # Premium tier state
+└── components/              # Reusable UI
+supabase/
+├── migrations/              # Schema + RLS policies
+└── functions/
+    ├── ai-assistant/        # Claude summaries & search
+    └── revenuecat-webhook/  # Purchase sync
+.github/
+└── workflows/               # CI/CD pipelines
 ```
 
-## Remaining setup (not code — accounts/infra)
+---
 
-- **Provision Supabase** + apply the migrations (app runs in demo mode until then).
-- **Deploy the AI Edge Function** (`supabase functions deploy ai-assistant`) and set
-  `supabase secrets set ANTHROPIC_API_KEY=...` to enable the AI assistant.
-- **RevenueCat in-app purchases** — code is wired (SDK, paywall, sync webhook). Remaining is
-  store/dashboard config + a dev build. Full walkthrough in [REVENUECAT.md](REVENUECAT.md).
-- **Panic SMS automation** (optional): a Twilio gateway via Edge Function for fully
-  background sends; today `expo-sms` opens the composer for the user to send.
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **App** | Expo SDK 51, React Native, TypeScript |
+| **Routing** | Expo Router (file-based) |
+| **State** | TanStack Query (server), Zustand (local) |
+| **Forms** | React Hook Form + Zod |
+| **Backend** | Supabase (Postgres + Auth + Storage + RLS) |
+| **Encryption** | expo-crypto (SHA-256) + libsodium (XChaCha20-Poly1305) |
+| **Biometric** | expo-local-authentication (Face ID / fingerprint) |
+| **Media** | expo-camera, expo-av, expo-image-picker |
+| **Storage** | expo-secure-store (encryption keys) |
+| **AI** | Claude API (via Supabase Edge Functions) |
+| **Payments** | RevenueCat + Apple App Store + Google Play |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+---
+
+## Support
+
+Email: hvacandroof@gmail.com
